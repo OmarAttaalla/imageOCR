@@ -45,6 +45,7 @@ class DataImage:
                 right = left + width
                 bottom = top + height
                 newCrop = self.LoadedImage.crop((left,top,right,bottom))
+                newCrop = newCrop.resize((551, 917))
                 newCrop.save("TempCrops\\" + str(i) + "-" + str(q) + ".png")
                 newDataImage = DataImage("TempCrops\\" + str(i) + "-" + str(q) + ".png")
                 self.CroppedImages.append(newDataImage)
@@ -89,9 +90,6 @@ num_to_char = layers.experimental.preprocessing.StringLookup(
 )
 
 
-MainImage = DataImage("resized.png")
-MainImage.Create_Crops(551, 917)
-
 
 def decode_prediction(pred):
     input_len = np.ones(pred.shape[0]) * pred.shape[1]
@@ -105,31 +103,41 @@ def decode_prediction(pred):
     for res in results:
         res = tf.strings.reduce_join(num_to_char(res)).numpy().decode("utf-8")
         print(res, "-- res")
+        if res == '[UNK]':
+            res = 'v'
         output_text.append(res)
     return output_text
 
 
 newmodel = keras.models.load_model("nnModel.h5", compile=False)
-nline = 0
-totalText = ""
 
-print(len(MainImage.CroppedImages))
+def start_read(imagedir, numChars, numLines):
+    nline = 0
+    totalText = ""
 
-for p in range(len(MainImage.CroppedImages)):
-        print(p, " -- P")
-        imageToRead = encode_single_sample(MainImage.CroppedImages[p])
-        print(MainImage.CroppedImages[p].ImagePath, "-- Path")
-        imageToRead = np.expand_dims(imageToRead, axis=0)
-        pred = newmodel.predict(imageToRead)
-        totalText = totalText + decode_prediction(pred)[0]
-        nline = nline + 1
-        if (nline >= MainImage.numColumns):
-            nline = 0
-            totalText = totalText + "\n"
+    numChars = int(numChars)
+    numLines = int(numLines)
 
-text_file = open("NNResults2.txt", "w")
-text_file.write(totalText)
-text_file.close()
+    MainImage = DataImage(imagedir)
+    MainImage.Create_Crops(MainImage.width // numChars, MainImage.height // numLines)
+
+    print(len(MainImage.CroppedImages))
+
+    for p in range(len(MainImage.CroppedImages)):
+            print(p, " -- P")
+            imageToRead = encode_single_sample(MainImage.CroppedImages[p])
+            print(MainImage.CroppedImages[p].ImagePath, "-- Path")
+            imageToRead = np.expand_dims(imageToRead, axis=0)
+            pred = newmodel.predict(imageToRead)
+            totalText = totalText + decode_prediction(pred)[0]
+            nline = nline + 1
+            if (nline >= MainImage.numColumns):
+                nline = 0
+                totalText = totalText + "\n"
+
+    text_file = open("NNResults5.txt", "w")
+    text_file.write(totalText)
+    text_file.close()
 
 
 
