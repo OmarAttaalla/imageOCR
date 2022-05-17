@@ -1,3 +1,4 @@
+from asyncio.windows_events import NULL
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 
@@ -17,6 +18,12 @@ from tensorflow.keras import layers
 
 import pickle
 
+Window = NULL
+
+def pass_window(window):
+    print("Passed Window")
+    global Window
+    Window = window
 
 characters = set()
 
@@ -49,6 +56,10 @@ class DataImage:
                 newCrop.save("TempCrops\\" + str(i) + "-" + str(q) + ".png")
                 newDataImage = DataImage("TempCrops\\" + str(i) + "-" + str(q) + ".png")
                 self.CroppedImages.append(newDataImage)
+                print("Out of Window", q + i*100)
+                if Window:
+                    print(q + i*100)
+                    Window['Progess'].update(str(q + i*100) + '/' + str(numRows * numColumns))
         # left = 0
         # top = 0
         # right = left + width

@@ -10,11 +10,11 @@ file_list_column = [
     ],
     [
         sg.Text("Characters per line: "),
-        sg.InputText(),
+        sg.InputText(size = (4,2)),
         sg.Text("Total number of lines: "),
-        sg.InputText()
+        sg.InputText(size = (4,2))
     ],
-    [sg.Button("Read")]
+    [sg.Button("Read"), sg.Text("",key="Progess")]
 ]
 
 layout = [
@@ -24,13 +24,13 @@ layout = [
 ]
 
 window = sg.Window(title="Image OCR", layout=layout, margins=(100,50))
+read.pass_window(window) #Pass window to NN to make updates to GUI (Reading Progress)
 
 while True:
     event, values = window.read()
     if event == "Read":
         print(values)
         print(values["-FILE-"])
-        read.start_read(values["-FILE-"], values[0], values[1])
-        #Read Here
+        window.perform_long_operation(lambda : read.start_read(values["-FILE-"], values[0], values[1]), '-OPERATION DONE-')
     elif event == sg.WIN_CLOSED:
         break
