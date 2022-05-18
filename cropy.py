@@ -27,7 +27,7 @@ for im in images:
     labels.append(im[(im.find("(") + 1) : im.find(")")])
     print(im)
 
-np.save("Labels.npy", labels)
+np.save("SmallLabels.npy", labels)
 characters = sorted(set(char for label in labels for char in label))
 
 ##To save in file
@@ -39,10 +39,10 @@ print("Number of labels found: ", len(labels))
 print("Number of unique characters: ", len(characters))
 print("Characters present: ", characters)
 
-batch_size = 16
+batch_size = 32
 
-width = 551
-height = 917
+width = 33
+height = 55
 
 downsample_factor = 4
 
@@ -227,7 +227,7 @@ def build_model():
 model = build_model()
 model.summary()
 
-epochs = 100
+epochs = 50
 early_stopping_patience = 10
 # Add early stopping
 early_stopping = keras.callbacks.EarlyStopping(
@@ -282,14 +282,14 @@ for batch in validation_dataset.take(1):
         img = (batch_images[i, :, :, 0] * 255).numpy().astype(np.uint8)
         img = img.T
         title = f"Prediction: {pred_texts[i]}"
-        ax[i // 4, i % 4].imshow(img, cmap="gray")
-        ax[i // 4, i % 4].set_title(title)
-        ax[i // 4, i % 4].axis("off")
-plt.show()
+        #ax[i // 4, i % 4].imshow(img, cmap="gray")
+        #ax[i // 4, i % 4].set_title(title)
+        #ax[i // 4, i % 4].axis("off")
+#plt.show()
 
-prediction_model.save("nnModel.h5")
+prediction_model.save("smallNNModel.h5")
 
-newmodel = keras.models.load_model("nnModel.h5")
+newmodel = keras.models.load_model("smallNNModel.h5")
 
 for batch in validation_dataset.take(1):
     batch_images = batch["image"]
@@ -308,10 +308,10 @@ for batch in validation_dataset.take(1):
         img = (batch_images[i, :, :, 0] * 255).numpy().astype(np.uint8)
         img = img.T
         title = f"Prediction: {pred_texts[i]}"
-        ax[i // 4, i % 4].imshow(img, cmap="gray")
-        ax[i // 4, i % 4].set_title(title)
-        ax[i // 4, i % 4].axis("off")
-plt.show()
+        #ax[i // 4, i % 4].imshow(img, cmap="gray")
+       # ax[i // 4, i % 4].set_title(title)
+        #ax[i // 4, i % 4].axis("off")
+#plt.show()
 
 
 """
