@@ -18,6 +18,8 @@ from tensorflow.keras import layers
 
 import pickle
 
+import math
+
 Window = NULL
 
 def pass_window(window):
@@ -36,39 +38,40 @@ class DataImage:
         self.ImagePath = imagePath
         self.CroppedImages = []
         self.width, self.height = self.LoadedImage.size
-    def Create_Crops(self, width, height):
+    def Create_Crops(self, numChars, numLines, denseRead):
         totalWidth, totalHeight = self.LoadedImage.size
-        numRows = int(totalHeight / height)
-        numColumns = int(totalWidth / width)
-        self.widths = width
-        self.heights = height
+        numRows = numLines
+        numColumns = numChars
+        widthAdjustment = 0 # If we have a fractional width / height, we want to make this 1
+        heightAdjustment = 0
+
+        if denseRead:
+            resizeDims = (551,917)
+        else:
+            resizeDims = (33,55)
+
+        if (math.ceil(totalWidth / numChars) - (totalWidth / numChars) > 0):
+            widthAdjustment = 1
+        if (math.ceil(totalHeight / numLines) - (totalHeight / numLines) > 0):
+            heightAdjustment = 1
+            
+        self.widths = math.ceil(totalWidth / numChars)
+        self.heights = math.ceil(totalHeight / numLines)
         self.numRows = numRows
         self.numColumns = numColumns
-        print(numColumns, "NUM COLUMNS")
         for i in range (numRows):
             for q in range(numColumns):
-                left = q*width
-                top = i*height
-                right = left + width
-                bottom = top + height
+                left = q*(self.widths - widthAdjustment)
+                top = i*(self.heights - heightAdjustment)
+                right = left + self.widths
+                bottom = top + self.heights
                 newCrop = self.LoadedImage.crop((left,top,right,bottom))
-                newCrop = newCrop.resize((551, 917))
+                newCrop = newCrop.resize(resizeDims)
                 newCrop.save("TempCrops\\" + str(i) + "-" + str(q) + ".png")
                 newDataImage = DataImage("TempCrops\\" + str(i) + "-" + str(q) + ".png")
                 self.CroppedImages.append(newDataImage)
-                print("Out of Window", q + i*100)
                 if Window:
-                    print(q + i*100)
-                    Window['Progess'].update(str(q + i*100) + '/' + str(numRows * numColumns))
-        # left = 0
-        # top = 0
-        # right = left + width
-        # bottom = top + height
-        # newCrop = self.LoadedImage.crop((left,top,right,bottom))
-        # newCrop.save("TempCrops\\" + "TEST" + ".png")
-        # newDataImage = DataImage("TempCrops\\" + "TEST" + ".png")
-        # self.CroppedImages.append(newDataImage)
-        print("HERE")
+                    Window['Progess'].update("Creating Crop: " + str(q + i*100) + '/' + str(numRows * numColumns))
 
 labels = np.load("Labels.npy", allow_pickle=True)
 max_length = max([len(label) for label in labels])
@@ -120,22 +123,33 @@ def decode_prediction(pred):
     return output_text
 
 
-newmodel = keras.models.load_model("nnModel.h5", compile=False)
-
-def start_read(imagedir, numChars, numLines):
+def start_read(imagedir, numChars, numLines, Dense_Read):
     nline = 0
     totalText = ""
 
     numChars = int(numChars)
     numLines = int(numLines)
 
+    if Window:
+        Window['Progess'].update("Loading Image...")
     MainImage = DataImage(imagedir)
-    MainImage.Create_Crops(MainImage.width // numChars, MainImage.height // numLines)
 
-    print(len(MainImage.CroppedImages))
+    if Window:
+        Window['Progess'].update("Creating Crops...")
+    MainImage.Create_Crops(numChars, numLines, Dense_Read)
+
+    if Window:
+        Window['Progess'].update("Loading Model...")
+
+    if Dense_Read: #use Dense NN Model
+        newmodel = keras.models.load_model("nnModel.h5", compile=False)
+    else:
+        newmodel = keras.models.load_model("nnModel.h5", compile=False)
 
     for p in range(len(MainImage.CroppedImages)):
             print(p, " -- P")
+            if Window:
+                Window['Progess'].update("Reading Characters: " + str(p) + "/" + str(len(MainImage.CroppedImages)))
             imageToRead = encode_single_sample(MainImage.CroppedImages[p])
             print(MainImage.CroppedImages[p].ImagePath, "-- Path")
             imageToRead = np.expand_dims(imageToRead, axis=0)
@@ -147,8 +161,13 @@ def start_read(imagedir, numChars, numLines):
                 totalText = totalText + "\n"
 
     text_file = open("NNResults5.txt", "w")
+    if Window:
+        Window['Progess'].update("Creating Text File...")
     text_file.write(totalText)
     text_file.close()
+    if Window:
+        Window['Progess'].update("Text File Created at: " + os.path.abspath(os.getcwd()) + "\\" + "NNResults5.txt")
+    return True
 
 
 

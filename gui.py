@@ -12,7 +12,8 @@ file_list_column = [
         sg.Text("Characters per line: "),
         sg.InputText(size = (4,2)),
         sg.Text("Total number of lines: "),
-        sg.InputText(size = (4,2))
+        sg.InputText(size = (4,2)),
+        sg.Checkbox("Dense Read", key="DENSE_READ")
     ],
     [sg.Button("Read"), sg.Text("",key="Progess")]
 ]
@@ -26,11 +27,14 @@ layout = [
 window = sg.Window(title="Image OCR", layout=layout, margins=(100,50))
 read.pass_window(window) #Pass window to NN to make updates to GUI (Reading Progress)
 
+Reading = False #If the Program is currently reading an image
+
 while True:
     event, values = window.read()
-    if event == "Read":
-        print(values)
-        print(values["-FILE-"])
-        window.perform_long_operation(lambda : read.start_read(values["-FILE-"], values[0], values[1]), '-OPERATION DONE-')
+    if values.pop("-OPERATION DONE-", None) != None:
+        Reading = False
+    if event == "Read" and Reading == False:
+        Reading = True
+        window.perform_long_operation(lambda : read.start_read(values["-FILE-"], values[0], values[1], values["DENSE_READ"]), '-OPERATION DONE-')
     elif event == sg.WIN_CLOSED:
         break
