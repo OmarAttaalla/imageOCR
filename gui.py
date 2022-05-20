@@ -2,6 +2,10 @@ import PySimpleGUI as sg
 import os
 import read
 
+font = ('Oswald', 12, 'bold')
+sg.theme('DarkBlue13')
+sg.set_options(font=font)
+
 file_list_column = [
     [
         sg.Text("Select an Image:"),

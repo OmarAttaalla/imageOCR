@@ -38,6 +38,11 @@ class DataImage:
         self.ImagePath = imagePath
         self.CroppedImages = []
         self.width, self.height = self.LoadedImage.size
+    def __del__(self):
+        for i in self.CroppedImages:
+            i.LoadedImage.close()
+            os.remove(i.ImagePath)
+            del i
     def Create_Crops(self, numChars, numLines, denseRead):
         totalWidth, totalHeight = self.LoadedImage.size
         numRows = numLines
@@ -50,13 +55,8 @@ class DataImage:
         else:
             resizeDims = (33,55)
 
-        if (math.ceil(totalWidth / numChars) - (totalWidth / numChars) > 0):
-            widthAdjustment = 1
-        if (math.ceil(totalHeight / numLines) - (totalHeight / numLines) > 0):
-            heightAdjustment = 1
-            
-        self.widths = math.ceil(totalWidth / numChars)
-        self.heights = math.ceil(totalHeight / numLines)
+        self.widths = math.floor(totalWidth / numChars)
+        self.heights = math.floor(totalHeight / numLines)
         self.numRows = numRows
         self.numColumns = numColumns
         for i in range (numRows):
@@ -72,6 +72,19 @@ class DataImage:
                 self.CroppedImages.append(newDataImage)
                 if Window:
                     Window['Progess'].update("Creating Crop: " + str(q + i*100) + '/' + str(numRows * numColumns))
+    def find_best_ratio(self, numChars, numLines):
+        best = 9999
+        best_multiplier = 1
+        for i in range(10):
+            if ((self.width*(i+1) % numChars) + (self.height*(i+1) % numLines)) < best:
+                best = (self.width*(i+1) % numChars) + (self.height*(i+1) % numLines)
+                best_multiplier = i + 1
+        self.LoadedImage = self.LoadedImage.resize((self.width*best_multiplier, self.height*best_multiplier))
+        self.width, self.height = self.LoadedImage.size
+        self.LoadedImage.save("resized-image.png")
+        self.ImagePath = "resized-image.png"
+        
+
 
 labels = np.load("Labels.npy", allow_pickle=True)
 max_length = max([len(label) for label in labels])
@@ -135,6 +148,10 @@ def start_read(imagedir, numChars, numLines, Dense_Read):
     MainImage = DataImage(imagedir)
 
     if Window:
+        Window['Progess'].update("Finding best Dimmensions...")
+    MainImage.find_best_ratio(numChars, numLines)
+
+    if Window:
         Window['Progess'].update("Creating Crops...")
     MainImage.Create_Crops(numChars, numLines, Dense_Read)
 
@@ -144,7 +161,7 @@ def start_read(imagedir, numChars, numLines, Dense_Read):
     if Dense_Read: #use Dense NN Model
         newmodel = keras.models.load_model("nnModel.h5", compile=False)
     else:
-        newmodel = keras.models.load_model("nnModel.h5", compile=False)
+        newmodel = keras.models.load_model("models\\smallNNModel.h5", compile=False)
 
     for p in range(len(MainImage.CroppedImages)):
             print(p, " -- P")
@@ -165,6 +182,14 @@ def start_read(imagedir, numChars, numLines, Dense_Read):
         Window['Progess'].update("Creating Text File...")
     text_file.write(totalText)
     text_file.close()
+    if Window:
+        Window['Progess'].update("Deleting temporary images")
+    
+    MainImage.LoadedImage.close()
+    os.remove(MainImage.ImagePath)
+
+    del MainImage
+    
     if Window:
         Window['Progess'].update("Text File Created at: " + os.path.abspath(os.getcwd()) + "\\" + "NNResults5.txt")
     return True
