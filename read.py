@@ -191,7 +191,7 @@ def start_read(imagedir, numChars, numLines, Dense_Read):
     del MainImage
     
     if Window:
-        Window['Progess'].update("Text File Created at: " + os.path.abspath(os.getcwd()) + "\\" + "NNResults5.txt")
+        Window['Progess'].update("Text File Created at: " + os.path.abspath(os.getcwd()) + "\\NNResults\\" + "NNResults5.txt")
     return True
 
 

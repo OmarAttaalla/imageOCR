@@ -35,10 +35,10 @@ Reading = False #If the Program is currently reading an image
 
 while True:
     event, values = window.read()
-    if values.pop("-OPERATION DONE-", None) != None:
+    if event == sg.WIN_CLOSED:
+        break
+    elif values.pop("-OPERATION DONE-", None) != None:
         Reading = False
     if event == "Read" and Reading == False:
         Reading = True
         window.perform_long_operation(lambda : read.start_read(values["-FILE-"], values[0], values[1], values["DENSE_READ"]), '-OPERATION DONE-')
-    elif event == sg.WIN_CLOSED:
-        break
