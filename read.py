@@ -177,7 +177,7 @@ def start_read(imagedir, numChars, numLines, Dense_Read):
                 nline = 0
                 totalText = totalText + "\n"
 
-    text_file = open("NNResults5.txt", "w")
+    text_file = open("NNResults\\NNResult.txt", "w")
     if Window:
         Window['Progess'].update("Creating Text File...")
     text_file.write(totalText)
