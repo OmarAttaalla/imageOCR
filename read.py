@@ -86,7 +86,7 @@ class DataImage:
         
 
 
-labels = np.load("Labels.npy", allow_pickle=True)
+labels = np.load("SmallLabels.npy", allow_pickle=True)
 max_length = max([len(label) for label in labels])
 
 
@@ -161,7 +161,7 @@ def start_read(imagedir, numChars, numLines, Dense_Read):
     if Dense_Read: #use Dense NN Model
         newmodel = keras.models.load_model("nnModel.h5", compile=False)
     else:
-        newmodel = keras.models.load_model("models\\smallNNModel.h5", compile=False)
+        newmodel = keras.models.load_model("smallNNModel.h5", compile=False)
 
     for p in range(len(MainImage.CroppedImages)):
             print(p, " -- P")

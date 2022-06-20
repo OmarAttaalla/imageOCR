@@ -18,14 +18,14 @@ from tensorflow.keras import layers
 import pickle
 
 
-data_dir = Path("./UCrops/")
+data_dir = Path("./DifferentCrops/")
 
 images = sorted(list(map(str, list(data_dir.glob("*.png")))))
 labels = []
 
 for im in images:
     labels.append(im[(im.find("(") + 1) : im.find(")")])
-    print(im)
+    imaaa = Image.open(im)
 
 np.save("SmallLabels.npy", labels)
 characters = sorted(set(char for label in labels for char in label))
@@ -199,12 +199,12 @@ def build_model():
     # passing the output to the RNN part of the model
     new_shape = ((width // 4), (height // 4)* 64)
     x = layers.Reshape(target_shape=new_shape, name="reshape")(x)
-    x = layers.Dense(64, activation="relu", name="dense1")(x)
+    x = layers.Dense(128, activation="relu", name="dense1")(x)
     x = layers.Dropout(0.2)(x)
 
     # RNNs
+    x = layers.Bidirectional(layers.LSTM(32, return_sequences=True, dropout=0.25))(x)
     x = layers.Bidirectional(layers.LSTM(64, return_sequences=True, dropout=0.25))(x)
-    #x = layers.Bidirectional(layers.LSTM(64, return_sequences=True, dropout=0.25))(x)
 
     # Output layer
     x = layers.Dense(len(characters) + 1, activation="softmax", name="dense2")(x)
@@ -235,6 +235,8 @@ early_stopping = keras.callbacks.EarlyStopping(
 )
 
 # Train the model
+print(train_dataset)
+print(validation_dataset)
 history = model.fit(
     train_dataset,
     validation_data=validation_dataset,
